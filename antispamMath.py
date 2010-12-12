@@ -78,3 +78,5 @@ class antispamMath:
 			return self.nbrOfFalseTry
 		elif category == 'true':
 			return self.nbrOfTrueTry
+		else:
+			return False
