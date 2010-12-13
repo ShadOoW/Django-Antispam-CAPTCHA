@@ -1,5 +1,9 @@
-import random
+import random, glob
 import ImageDraw, Image
+
+path_to_numbers = "test/numbers/" #Path to the folders with numbers images
+path_to_signs = "test/signs/" #Path to the folders with signs images
+#The two path should be different!
 
 class antispamMath:
 	"""
@@ -20,24 +24,9 @@ class antispamMath:
     """
     
 	def __init__(self):
-		"""Mapping the numbers with their images name e.g. 2 = joje [.jpg]"""
-		self.numbers = dict({1: "wahad", 
-							2: "joje",
-							3: "talata",
-							4: "rab3a",
-							5: "khamsa",
-							6: "sata",
-							7: "sab3a",
-							8: "tamanya",
-							9: "tas3od",
-							10: "3achra",
-							11: "hadach"
-							})
-							
-		"""Mapping the signs with their images name e.g. '+' = zaide [.jpg]"""
-		self.mathSign = dict({"+": "zaide", 
-							"-": "na9ise",
-							})
+		self.numbers = glob.glob(path_to_numbers + "*.jpg")
+		self.signs = glob.glob(path_to_signs + "*.jpg")
+		
 		self.first = tuple()
 		self.second = tuple()
 		self.sign = tuple()
@@ -54,25 +43,25 @@ class antispamMath:
 		height = 140
 		
 		#Choose randomly 2 numbers and 1 sign from the dicts
-		self.first = random.choice(self.numbers.items())
-		self.second = random.choice(self.numbers.items())
-		self.sign = random.choice(self.mathSign.items())
+		self.first = random.choice(self.numbers)
+		self.second = random.choice(self.numbers)
+		self.sign = random.choice(self.signs)
 		
 		#Create a new image that can contain the 3 other - width*3
 		image = Image.new("RGBA", (width*3, height), (255,255,255, 0))
 		draw = ImageDraw.Draw(image)
 		
 		#Open the 3 images randomly chosen and resize them in case their are bigger.
-		img1 = Image.open("images/" + self.first[1] +".jpg").resize((width, height), Image.ANTIALIAS)
-		img2 = Image.open("images/" + self.sign[1] +".jpg").resize((width, height), Image.ANTIALIAS)
-		img3 = Image.open("images/" + self.second[1] +".jpg").resize((width, height), Image.ANTIALIAS)
+		img1 = Image.open(self.first).resize((width, height), Image.ANTIALIAS)
+		img2 = Image.open(self.sign).resize((width, height), Image.ANTIALIAS)
+		img3 = Image.open(self.second).resize((width, height), Image.ANTIALIAS)
 		
 		#Paste each of the 3 images into the final captcha image
 		point1 = width*3 - (width)
 		point2 = height - (height)
 		point3 = width*3
 		point4 = height
-		image.paste(img1, (point1, point2, point3, point4))
+		image.paste(img3, (point1, point2, point3, point4))
 		
 		point1 = width*2 - (width)
 		point2 = height - (height)
@@ -80,18 +69,18 @@ class antispamMath:
 		point4 = height
 		image.paste(img2, (point1, point2, point3, point4))
 		
-		point1 = width - (width)
-		point2 = height - (height)
+		point1 = 0
+		point2 = 0
 		point3 = width
 		point4 = height
-		image.paste(img3, (point1, point2, point3, point4))
+		image.paste(img1, (point1, point2, point3, point4))
 		
 		#Finally save the captcha image as jpeg.
 		image.save("captcha.jpg", "JPEG")
 	
 		## Uncomment to test ##
-		#import webbrowser
-		#webbrowser.open("captcha.jpg")
+		import webbrowser
+		webbrowser.open("captcha.jpg")
 	
 	def validate(self, answer):
 		"""Validate the answer of the user"""
@@ -102,10 +91,10 @@ class antispamMath:
 			self.nbrOfFalseTry += 1
 			return False
 		else:
-			if self.sign[0] == '+':
-				result = self.first[0] + self.second[0]
+			if self.getSign(self.sign) == '+':
+				result = self.getNumber(self.first) + self.getNumber(self.second)
 			else:
-				result = self.first[0] - self.second[0]
+				result = self.getNumber(self.first) - self.getNumber(self.second)
 			if answer == result:
 				self.nbrOfTrueTry += 1
 				return True
@@ -114,7 +103,7 @@ class antispamMath:
 		return False
 
 	def getNumberOfTry(self, category):
-		"""Get the number of try by categories : "all", "true", "false""""
+		"""Get the number of try by categories : 'all', 'true', 'false'"""
 		
 		if category == 'all':
 			return self.nbrOfFalseTry + self.nbrOfTrueTry
@@ -124,3 +113,21 @@ class antispamMath:
 			return self.nbrOfTrueTry
 		else:
 			return False
+
+	def getNumber(self, number):
+		"""Get the integer version of the images from their name."""
+		result = str()
+		for i in range(len(number)):
+			try:
+				int(number[i])
+				result += number[i]
+			except ValueError:
+				continue
+		return int(result)
+
+	def getSign(self, sign):
+		"""Get the sign version of the image from the name."""
+		if '+' in sign:
+			return '+'
+		else:
+			return '-'
