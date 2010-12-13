@@ -1,4 +1,5 @@
 import random
+import ImageDraw, Image
 
 class antispamMath:
 	"""
@@ -19,7 +20,8 @@ class antispamMath:
     """
     
 	def __init__(self):
-		self.numbers = dict({1: "wahad", #Mapping the numbers with their images name e.g. 2 = joje [.jpg]
+		"""Mapping the numbers with their images name e.g. 2 = joje [.jpg]"""
+		self.numbers = dict({1: "wahad", 
 							2: "joje",
 							3: "talata",
 							4: "rab3a",
@@ -45,11 +47,44 @@ class antispamMath:
 	def randomImg(self):
 		"""Generate random numbers and sign"""
 		
+		width = 138
+		height = 140
+		
 		self.first = random.choice(self.numbers.items())
 		self.second = random.choice(self.numbers.items())
 		self.sign = random.choice(self.mathSign.items())
 		
-		return dict({"first": self.first[1], "second": self.second[1],"sign": self.sign[1]})
+		image = Image.new("RGBA", (width*3, height), (255,255,255, 0))
+		draw = ImageDraw.Draw(image)
+		
+		img1 = Image.open("images/" + self.first[1] +".jpg").resize((width, height), Image.ANTIALIAS)
+		img2 = Image.open("images/" + self.sign[1] +".jpg").resize((width, height), Image.ANTIALIAS)
+		img3 = Image.open("images/" + self.second[1] +".jpg").resize((width, height), Image.ANTIALIAS)
+		
+		
+		point1 = width*3 - (width)
+		point2 = height - (height)
+		point3 = width*3
+		point4 = height
+		image.paste(img1, (point1, point2, point3, point4))
+		
+		point1 = width*2 - (width)
+		point2 = height - (height)
+		point3 = width*2
+		point4 = height
+		image.paste(img2, (point1, point2, point3, point4))
+		
+		point1 = width - (width)
+		point2 = height - (height)
+		point3 = width
+		point4 = height
+		image.paste(img3, (point1, point2, point3, point4))
+		
+		image.save("captcha.jpg", "JPEG")
+	
+		## Uncomment to test ##
+		#import webbrowser
+		#webbrowser.open("captcha.jpg")
 	
 	def validate(self, answer):
 		"""Validate the answer of the user"""
