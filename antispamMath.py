@@ -6,7 +6,7 @@ class antispamMath:
     Class that provide a simple math question to protect from rebot spam
         
         >>> antispam = antispamMath()
-        >>> antispam.randomImg() #return a dict with 2 numbers and 1 math sign
+        >>> antispam.randomImg() #create a jpeg image from 3 other images (2 number and 1 sign)
         >>> antispam.validate(5) #5 is supposed to be a wrong answer
         False
         >>> antispam.validate(-2) #-2 is supposed to be the correct answer
@@ -33,7 +33,9 @@ class antispamMath:
 							10: "3achra",
 							11: "hadach"
 							})
-		self.mathSign = dict({"+": "zaide", #Mapping the signs with their images name e.g. '+' = zaide [.jpg]
+							
+		"""Mapping the signs with their images name e.g. '+' = zaide [.jpg]"""
+		self.mathSign = dict({"+": "zaide", 
 							"-": "na9ise",
 							})
 		self.first = tuple()
@@ -47,21 +49,25 @@ class antispamMath:
 	def randomImg(self):
 		"""Generate random numbers and sign"""
 		
+		#Size of the images
 		width = 138
 		height = 140
 		
+		#Choose randomly 2 numbers and 1 sign from the dicts
 		self.first = random.choice(self.numbers.items())
 		self.second = random.choice(self.numbers.items())
 		self.sign = random.choice(self.mathSign.items())
 		
+		#Create a new image that can contain the 3 other - width*3
 		image = Image.new("RGBA", (width*3, height), (255,255,255, 0))
 		draw = ImageDraw.Draw(image)
 		
+		#Open the 3 images randomly chosen and resize them in case their are bigger.
 		img1 = Image.open("images/" + self.first[1] +".jpg").resize((width, height), Image.ANTIALIAS)
 		img2 = Image.open("images/" + self.sign[1] +".jpg").resize((width, height), Image.ANTIALIAS)
 		img3 = Image.open("images/" + self.second[1] +".jpg").resize((width, height), Image.ANTIALIAS)
 		
-		
+		#Paste each of the 3 images into the final captcha image
 		point1 = width*3 - (width)
 		point2 = height - (height)
 		point3 = width*3
@@ -80,6 +86,7 @@ class antispamMath:
 		point4 = height
 		image.paste(img3, (point1, point2, point3, point4))
 		
+		#Finally save the captcha image as jpeg.
 		image.save("captcha.jpg", "JPEG")
 	
 		## Uncomment to test ##
@@ -107,6 +114,8 @@ class antispamMath:
 		return False
 
 	def getNumberOfTry(self, category):
+		"""Get the number of try by categories : "all", "true", "false""""
+		
 		if category == 'all':
 			return self.nbrOfFalseTry + self.nbrOfTrueTry
 		elif category == 'false':
