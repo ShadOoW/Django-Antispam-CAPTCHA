@@ -1,8 +1,10 @@
 import random, glob
 import ImageDraw, Image
+from datetime import datetime
 
-path_to_numbers = "test/numbers/" #Path to the folders with numbers images
-path_to_signs = "test/signs/" #Path to the folders with signs images
+path_to_numbers = "m/images/captcha/numbers/" #Path to the folders with numbers images
+path_to_signs = "m/images/captcha/signs/" #Path to the folders with signs images
+path_to_save = "m/images/captcha/"
 #The two path should be different!
 
 class antispamMath:
@@ -10,17 +12,9 @@ class antispamMath:
     Class that provide a simple math question to protect from rebot spam
         
         >>> antispam = antispamMath()
-        >>> antispam.randomImg() #create a jpeg image from 3 other images (2 number and 1 sign)
-        >>> antispam.validate(5) #5 is supposed to be a wrong answer
-        False
-        >>> antispam.validate(-2) #-2 is supposed to be the correct answer
-        True
-        >>> antispam.getNumberOfTry("all")
-        2
-        >>> antispam.getNumberOfTry("false")
-        1
-        >>> antispam.getNumberOfTry("true")
-        1
+        >>> antispam.randomImg()
+        
+    For a complet how to use visit : www.icode.co/en/code/
     """
     
 	def __init__(self):
@@ -30,10 +24,6 @@ class antispamMath:
 		self.first = tuple()
 		self.second = tuple()
 		self.sign = tuple()
-
-		self.nbrOfFalseTry = int(0)
-		self.nbrOfTrueTry = int(0)
-		
 		
 	def randomImg(self):
 		"""Generate random numbers and sign"""
@@ -76,19 +66,19 @@ class antispamMath:
 		image.paste(img1, (point1, point2, point3, point4))
 		
 		#Finally save the captcha image as jpeg.
-		image.save("captcha.jpg", "JPEG")
+		image.save(path_to_save + "captcha.jpg", "JPEG")
 	
 		## Uncomment to test ##
-		import webbrowser
-		webbrowser.open("captcha.jpg")
-	
-	def validate(self, answer):
+		#import webbrowser
+		#webbrowser.open(path_to_save + "captcha.jpg")
+		
+	def validate(self, request ,answer):
 		"""Validate the answer of the user"""
 		
 		try:
 			answer = int(answer)
 		except ValueError:
-			self.nbrOfFalseTry += 1
+			request.session['nbrOfFalseTry'] += 1
 			return False
 		else:
 			if self.getSign(self.sign) == '+':
@@ -96,23 +86,45 @@ class antispamMath:
 			else:
 				result = self.getNumber(self.first) - self.getNumber(self.second)
 			if answer == result:
-				self.nbrOfTrueTry += 1
 				return True
-		
-		self.nbrOfFalseTry += 1
+		request.session['nbrOfFalseTry'] += 1
 		return False
-
-	def getNumberOfTry(self, category):
-		"""Get the number of try by categories : 'all', 'true', 'false'"""
 		
-		if category == 'all':
-			return self.nbrOfFalseTry + self.nbrOfTrueTry
-		elif category == 'false':
-			return self.nbrOfFalseTry
-		elif category == 'true':
-			return self.nbrOfTrueTry
+	def numberOfTry(self, request ,limit=5):
+		"""Should be used in a If statement. return True until the limit of try is by passed
+		
+		if the number of false try is bigger than the limit set, some session var are created:
+		time_out: the exact time when the limit of  authorized try is by passed.
+		reason: is a text message that explain to the user what happening.
+		message: is the name of the form field that we want to save and display in the next page
+		
+		"""
+		if 'nbrOfFalseTry' not in request.session:
+			request.session['nbrOfFalseTry'] = 0
+		
+		if request.session['nbrOfFalseTry'] <= limit:
+			return True
 		else:
+			if 'time_out' not in request.session:
+				request.session['time_out'] = datetime.now() 
+			if 'reason' not in request.session:
+				request.session['reason'] = "You have tried 5 time to answer the CAPTCHA without succes."
+			try:
+				if 'message' not in request.session:
+					request.session['message'] = request.POST['message']
+			except NameError:
+				pass
 			return False
+			
+	def restart(self, request):
+		request.session['nbrOfFalseTry'] = 0
+		
+		if 'time_out' in request.session:
+			del request.session['time_out']
+		if 'reason' in request.session:
+			del request.session['reason']
+		if 'message' in request.session:
+			del request.session['message']
 
 	def getNumber(self, number):
 		"""Get the integer version of the images from their name."""
@@ -130,4 +142,4 @@ class antispamMath:
 		if '+' in sign:
 			return '+'
 		else:
-			return '-'
+			return '-'   
